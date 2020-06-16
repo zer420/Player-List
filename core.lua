@@ -1,4 +1,4 @@
-local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", false);
+local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", true);
 local ui_win = gui.Window("playerlist", "Player List", 150, 150, 766, 422);
 
 local ui_tab = {
@@ -137,8 +137,8 @@ local function LoadCfg(uid)
     ui_visuals_color[3]:SetValue(unpack(unpack({p_list.p[uid].vis["health"].clr})));
 
     ui_visuals[4]:SetValue(p_list.p[uid].vis["chams"][1]);
-    ui_visuals_color[4]:SetValue(unpack(unpack({p_list.p[uid].vis["chams"]["clrinv"]})));
-    ui_visuals_color[5]:SetValue(unpack(unpack({p_list.p[uid].vis["chams"]["clrvis"]})));
+    ui_visuals_color[4]:SetValue(unpack(unpack({p_list.p[uid].vis["chams"]["clrvis"]})));
+    ui_visuals_color[5]:SetValue(unpack(unpack({p_list.p[uid].vis["chams"]["clrinv"]})));
 end;
 
 local ui_allow_updt = false;
