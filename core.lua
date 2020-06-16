@@ -371,7 +371,7 @@ end;
 
 callbacks.Register("CreateMove", "Apply", function()
     -- get highest priority target which is visible
-    local prio_vis = {11, nil, allowed,};
+    local prio_vis = {10, nil, allowed,};
     for i, p in pairs(ent_vis) do
         if  p_list.p[i] ~= nil then
             if ui_misc[1]:GetValue() == 1 and p_list.p[i].rbot == true then
