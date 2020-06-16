@@ -1,15 +1,17 @@
-local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", false);
-local ui_win = gui.Window("playerlist", "Player List", 150, 150, 516, 422);
+local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", true);
+local ui_win = gui.Window("playerlist", "Player List", 150, 150, 766, 422);
 
 local ui_tab = {
-    {"Player", gui.Groupbox(ui_win, "Select a Player", 16, 56, 234), gui.Groupbox(ui_win, "Player Options", 266, 56, 234), gui.Groupbox(ui_win, "Player Information", 266, 224, 234),},
-    {"Misc", gui.Groupbox(ui_win, "Playstyle", 16, 56, 234), gui.Groupbox(ui_win, "Priority Settings", 266, 56, 234),},
-    {1, {170,30,30,255}, {220,60,40,255}, {255,255,255,255}, {255,255,255,40}, f, dpi, dpi_scale = {0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3,},},
+    {"Player", gui.Groupbox(ui_win, "Player Selection", 16, 56, 234), gui.Groupbox(ui_win, "Options", 266, 56, 234),
+    gui.Groupbox(ui_win, "Informations", 266, 224, 234), gui.Groupbox(ui_win, "Visuals", 516, 56, 234),},
+    {"Misc", gui.Groupbox(ui_win, "Playstyle", 16, 56, 234), gui.Groupbox(ui_win, "Priority Settings", 266, 56, 234),
+    gui.Groupbox(ui_win, "Visuals Settings", 16, 190, 234),},
+    {1, {170,30,30,255}, {220,60,40,255}, {255,255,255,255}, {255,255,255,40}, f, f2, dpi, dpi_scale = {0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3,},},
 };
 local ntab = (#ui_tab - 1); local function ui_setup() for i = 1, ntab do if i ~= ui_tab[ntab + 1][1] then for j = 2, #ui_tab[i] do ui_tab[i][j]:SetInvisible(true); end; end; end; end;
 ui_setup(); local function ui_tab_selector(x1, y1, x2, y2, active)
     if ui_tab[ntab + 1].dpi ~= ui_tab[ntab + 1].dpi_scale[gui.GetValue("adv.dpi") + 1] then ui_tab[ntab + 1].dpi = ui_tab[ntab + 1].dpi_scale[gui.GetValue("adv.dpi") + 1];
-    ui_tab[ntab + 1].f = draw.CreateFont("Calibri Bold", 20 * ui_tab[ntab + 1].dpi); end;
+    ui_tab[ntab + 1].f = draw.CreateFont("Calibri Bold", 20 * ui_tab[ntab + 1].dpi); ui_tab[ntab + 1].f2 = draw.CreateFont("Bahnschrift", 12 * ui_tab[ntab + 1].dpi); end;
     draw.SetFont(ui_tab[ntab + 1].f); local mx, my = input.GetMousePos(); local size = ((x2 - x1) / (ntab)); local offset = x1;
     for i = 1, (ntab) do
         if i == ui_tab[ntab + 1][1] then draw.Color(unpack(ui_tab[ntab + 1][3])) else draw.Color(unpack(ui_tab[ntab + 1][2])) end;
@@ -21,16 +23,33 @@ ui_setup(); local function ui_tab_selector(x1, y1, x2, y2, active)
                 for j = 2, #ui_tab[ui_tab[ntab + 1][1]] do ui_tab[ui_tab[ntab + 1][1]][j]:SetInvisible(true); end; ui_tab[ntab + 1][1] = i;
                 for j = 2, #ui_tab[i] do ui_tab[i][j]:SetInvisible(false); end;
 end; end; offset = offset + size; end; end;
-local ui_tab_select = gui.Custom(ui_win, "tab", 0, 0, 516, 40, ui_tab_selector); -- way cleaner than buttons
-
+local ui_tab_select = gui.Custom(ui_win, "tab", 0, 0, 766, 40, ui_tab_selector); -- way cleaner than buttons
+ui_tab_select:SetWidth(516);
 local ui_plist = gui.Listbox(ui_tab[1][2], "players", 257);
 ui_plist:SetWidth(202);
 
 local ui_misc = {
     gui.Combobox(ui_tab[2][2], "playstyle.mode", "Mode", "Rage", "Semirage"),
     gui.Checkbox(ui_tab[2][3], "priority.enable", "Enable Priority", false),
-    gui.Slider(ui_tab[2][3], "priority.fov", "FOV Override", 2, 1, 10, 1);
+    gui.Slider(ui_tab[2][3], "priority.fov", "FOV Override", 2, 1, 10, 1),
+    gui.Checkbox(ui_tab[2][4], "visuals.enable", "Enable Individual Visuals", false),
 };
+
+local ui_visuals_ref = gui.Multibox(ui_tab[1][5], "Options");
+local ui_visuals = {
+    gui.Checkbox(ui_visuals_ref, "visuals.box", "Box", true),
+    gui.Checkbox(ui_visuals_ref, "visuals.name", "Name", true),
+    gui.Checkbox(ui_visuals_ref, "visuals.health", "Health", true),
+    gui.Checkbox(ui_visuals_ref, "visuals.chams", "Chams", true),
+};
+local ui_visuals_color = {
+    gui.ColorPicker(ui_visuals[1], "clr", "Box", 255, 255, 255, 80),
+    gui.ColorPicker(ui_visuals[2], "clr", "Name", 255, 255, 255, 255),
+    gui.ColorPicker(ui_visuals[3], "clr", "Health", 255, 255, 255, 255),
+    gui.ColorPicker(ui_visuals[4], "clrvis", "Chams", 0, 175, 255, 255),
+    gui.ColorPicker(ui_visuals[4], "clrinv", "Chams", 230, 155, 230, 255),
+};
+ui_visuals_ref:SetPosY(203);
 
 local semi_rbot = gui.Checkbox(ui_tab[1][3], "ragebot", "Use Ragebot", false);
 local priority_order = gui.Slider(ui_tab[1][3], "priority", "Priority Order", 10, 1, 10, 1);
@@ -45,11 +64,14 @@ local kdr = gui.Text(ui_tab[1][4], "Kill/Death Ratio");
 ui_enable:SetDescription("Show the player list window.");
 ui_misc[1]:SetDescription("Select your playstyle for suiting features.");
 ui_misc[2]:SetDescription("It will cause a lock so be aware.");
+ui_misc[3]:SetDescription("The priority will be set using this value.");
+ui_misc[4]:SetDescription("Show features to set visuals per player.");
 semi_rbot:SetDescription("Use the ragebot instead of legitbot.");
 priority_order:SetDescription("Lower is higher priority, 10 is disabled.");
-ui_option_multi_ref:SetDescription("Features to control the ragebot per players.")
+ui_option_multi_ref:SetDescription("Features to control the ragebot per player.");
+ui_visuals_ref:SetDescription("Select what you want to see.");
 
-
+--vis = {box = {false, clr}, name = {false, clr}, health = {false, clr}, chams = {false, clr},}
 local p_list = {
     temp = {},
     p = {}, -- settings
@@ -60,11 +82,43 @@ local p_list = {
     },
 };
 
+local function CreateMat(uid, vis)
+    local clr = vis == 0 and unpack({p_list.p[uid].vis["chams"]["clrvis"]}) or unpack({p_list.p[uid].vis["chams"]["clrinv"]});
+    local vmt = [[
+        "VertexLitGeneric" {
+        "$basetexture" "vgui/white_additive"
+        "$color" "[]] .. clr[1] / 255 .. " " .. clr[2] / 255 .. " " .. clr[3] / 255 .. [[]"
+        "$alpha" "]] .. clr[4] / 255 .. [["
+        "$ignorez" "]] .. vis .. [["
+    }]];
+    return materials.Create("Chams", vmt);
+end;
+
 local function SaveCfg(uid)
     p_list.p[uid].rbot = semi_rbot:GetValue();
     p_list.p[uid].prio = priority_order:GetValue();
     p_list.p[uid].bodyaim = ui_player_option[1]:GetValue();
     p_list.p[uid].safepoint = ui_player_option[2]:GetValue();
+
+    p_list.p[uid].vis["box"][1] = ui_visuals[1]:GetValue();
+    p_list.p[uid].vis["box"].clr = {ui_visuals_color[1]:GetValue()};
+
+    p_list.p[uid].vis["name"][1] = ui_visuals[2]:GetValue();
+    p_list.p[uid].vis["name"].clr = {ui_visuals_color[2]:GetValue()};
+
+    p_list.p[uid].vis["health"][1] = ui_visuals[3]:GetValue();
+    p_list.p[uid].vis["health"].clr = {ui_visuals_color[3]:GetValue()};
+
+    p_list.p[uid].vis["chams"][1] = ui_visuals[4]:GetValue();
+    local temp = { {ui_visuals_color[4]:GetValue()}, {ui_visuals_color[5]:GetValue()}, ref = {{"clrvis", "matvis",}, {"clrinv", "matinv",},},};    
+    for j = 1, 2 do
+        for i = 1, 4 do
+            if unpack({p_list.p[uid].vis["chams"][temp.ref[j][1]]})[i] ~= temp[j][i] then
+                p_list.p[uid].vis["chams"][temp.ref[j][1]] = temp[j];
+                p_list.p[uid].vis["chams"][temp.ref[j][2]] = CreateMat(uid, (j - 1));
+            end;
+        end;
+    end;
 end;
 
 local function LoadCfg(uid)
@@ -72,6 +126,19 @@ local function LoadCfg(uid)
     priority_order:SetValue(p_list.p[uid].prio);
     ui_player_option[1]:SetValue(p_list.p[uid].bodyaim);
     ui_player_option[2]:SetValue(p_list.p[uid].safepoint);
+
+    ui_visuals[1]:SetValue(p_list.p[uid].vis["box"][1]);
+    ui_visuals_color[1]:SetValue(unpack(unpack({p_list.p[uid].vis["box"].clr})));
+    
+    ui_visuals[2]:SetValue(p_list.p[uid].vis["name"][1]);
+    ui_visuals_color[2]:SetValue(unpack(unpack({p_list.p[uid].vis["name"].clr})));
+
+    ui_visuals[3]:SetValue(p_list.p[uid].vis["health"][1]);
+    ui_visuals_color[3]:SetValue(unpack(unpack({p_list.p[uid].vis["health"].clr})));
+
+    ui_visuals[4]:SetValue(p_list.p[uid].vis["chams"][1]);
+    ui_visuals_color[4]:SetValue(unpack(unpack({p_list.p[uid].vis["chams"]["clrinv"]})));
+    ui_visuals_color[5]:SetValue(unpack(unpack({p_list.p[uid].vis["chams"]["clrvis"]})));
 end;
 
 local ui_allow_updt = false;
@@ -99,7 +166,15 @@ callbacks.Register("Draw", "UIHandler", function()
 
     if ui_cache.opti == false then return; end;
 
-    ui_win:SetHeight(ui_tab[3][1] == 1 and 422 or 250);
+    ui_win:SetHeight(ui_tab[3][1] == 1 and 422 or 336);
+
+    ui_cache.opti = ui_tab[3][1] == 1 and ui_misc[4]:GetValue() == true;
+
+    ui_win:SetWidth(ui_cache.opti == true and 766 or 516);
+    ui_tab_select:SetWidth(ui_cache.opti == true and 766 or 516);
+    ui_tab[1][5]:SetInvisible(not ui_cache.opti)
+
+    ui_misc[3]:SetDisabled(not ui_misc[2]:GetValue());
 
     if ui_misc[1]:GetValue() == 0 then ui_cache.opti = true; else ui_cache.opti = false; end;
     semi_rbot:SetInvisible(ui_cache.opti);
@@ -128,6 +203,98 @@ callbacks.Register("Draw", "UIHandler", function()
     end;
 end);
 
+local t_model = draw.CreateTexture(common.DecodePNG(http.Get("https://raw.githubusercontent.com/zer420/Player-List/master/t_model.png")));
+local ct_model = draw.CreateTexture(common.DecodePNG(http.Get("https://raw.githubusercontent.com/zer420/Player-List/master/ct_model.png")));
+
+local function ui_visual_previewer(x1, y1, x2, y2, active)
+    if ui_visuals[1]:GetValue() then -- box
+        draw.Color(ui_visuals_color[1]:GetValue());
+        draw.FilledRect(x1, y1, x2, y1 - 1);
+        draw.FilledRect(x1, y2, x2, y2 + 1);
+        draw.FilledRect(x1, y1, x1 + 1, y2);
+        draw.FilledRect(x2, y1, x2 - 1, y2);
+    end;  
+    if ui_tab[ntab + 1].f2 ~= nil then -- will throw some random errors if not check somewhy
+        draw.SetFont(ui_tab[ntab + 1].f2);
+    end;
+    if ui_visuals[2]:GetValue() then -- name
+        draw.Color(ui_visuals_color[2]:GetValue());
+        local string = ui_allow_updt == true and p_list.ref.name[ui_plist:GetValue() + 1] or "Larry";
+        local xtxt, ytxt = draw.GetTextSize(string);
+        draw.Text(x1 + ((x2 - x1) / 2) - (xtxt / 2) , y1 - ytxt - 5, string);
+    end;
+    if ui_visuals[3]:GetValue() then -- health num
+        draw.Color(ui_visuals_color[3]:GetValue());
+        local string = ui_allow_updt == true and entities.GetByIndex(p_list.ref.index[ui_plist:GetValue() + 1]):GetHealth() or "100";
+        local xtxt, ytxt = draw.GetTextSize(string); 
+        draw.Text(x1 - xtxt - 2 , y1, string);
+    end;
+    if ui_visuals[4]:GetValue() then -- textured chams
+        draw.Color(ui_visuals_color[4]:GetValue());
+    else
+        draw.Color(255,255,255,255);
+    end;
+    draw.SetTexture(t_model);
+    if ui_allow_updt == true then 
+        if entities.GetByIndex(p_list.ref.index[ui_plist:GetValue() + 1]):GetTeamNumber() == 3 then
+            draw.SetTexture(ct_model);
+        end;
+    end;
+    draw.FilledRect(x1 + 2, y1 + 2, x2 - 2, y2 - 2);
+    draw.SetTexture(nil);
+end;
+local ui_visual_preview = gui.Custom(ui_tab[1][5], "visualpreview", 56, 0, 90, 187, ui_visual_previewer); -- I may add more features in the future
+
+callbacks.Register("DrawESP", function(b)
+    if ui_misc[4]:GetValue() == false then return; end;
+    local p_ent = b:GetEntity();
+    if p_ent == nil or p_ent:IsPlayer() ~= true then return; end;
+    local uid = client.GetPlayerInfo(p_ent:GetIndex())["UserID"];
+    local x1, y1, x2, y2 = b:GetRect();
+    if p_list.p[uid].vis["box"][1] == true then
+        draw.Color(unpack(unpack({p_list.p[uid].vis["box"].clr})));
+        draw.FilledRect(x1, y1, x2, y1 - 1);
+        draw.FilledRect(x1, y2, x2, y2 + 1);
+        draw.FilledRect(x1, y1, x1 + 1, y2);
+        draw.FilledRect(x2, y1, x2 - 1, y2);
+    end;
+    if ui_tab[ntab + 1].f2 ~= nil then
+        draw.SetFont(ui_tab[ntab + 1].f2);
+    end;
+    if p_list.p[uid].vis["name"][1] == true then
+        draw.Color(unpack(unpack({p_list.p[uid].vis["name"].clr})));
+        local string = p_ent:GetName();
+        local xtxt, ytxt = draw.GetTextSize(string);
+        draw.Text(x1 + ((x2 - x1) / 2) - (xtxt / 2) , y1 - ytxt - 5, string);
+    end;
+    if p_list.p[uid].vis["health"][1] == true then
+        draw.Color(unpack(unpack({p_list.p[uid].vis["health"].clr})));
+        local string = p_ent:GetHealth();
+        local xtxt, ytxt = draw.GetTextSize(string);
+        draw.Text(x1 - xtxt - 2 , y1, string);
+    end;
+end);
+
+callbacks.Register("DrawModel", function(b)
+    if ui_misc[4]:GetValue() == false then return; end;
+    local p_ent = b:GetEntity();
+    if p_ent == nil or p_ent:IsPlayer() ~= true then return; end;
+    local uid = client.GetPlayerInfo(p_ent:GetIndex())["UserID"];
+
+    if p_list.p[uid].vis["chams"][1] == true then
+        local ref = {"matinv", "matvis",};
+        for i = 1, 2 do
+            if p_list.p[uid].vis["chams"][ref[i]] ~= nil then
+                b:ForcedMaterialOverride(p_list.p[uid].vis["chams"][ref[i]]);
+                b:DrawExtraPass();
+            else
+                p_list.p[uid].vis["chams"][ref[i]] = CreateMat(uid, i == 1 and 1 or 0);
+            end;
+        end;
+    end;    
+end);
+
+
 local openprofile = gui.Button(ui_tab[1][4], "Open Steam Profile In Overlay", function()
     if ui_allow_updt == true then
         if client.GetPlayerInfo(p_list.ref.index[ui_cache.list])["IsBot"] == false then
@@ -138,12 +305,17 @@ end; end; end);
 openprofile:SetWidth(202);
 
 callbacks.Register("CreateMove", "UpdatePlayerList", function()
+    p_list.temp = {};
+    p_list.ref = {name = {},uid = {},index = {},};
     p_list.temp = entities.FindByClass("CCSPlayer");
     for i, j in pairs(p_list.temp) do
         local uid = client.GetPlayerInfo(j:GetIndex())["UserID"];
         -- create an entry in the table
         if p_list.p[uid] == nil then
-            p_list.p[uid] = {rbot = false, prio = 10, bodyaim = false, safepoint = false,};
+            p_list.p[uid] = {rbot = false, prio = 10, bodyaim = false, safepoint = false, 
+                vis = {["box"] = {false, clr = {255,255,255,80},}, ["name"] = {false, clr = {255,255,255,255},},
+                ["health"] = {false, clr = {255,255,255,255}}, ["chams"] = {false, ["clrinv"] = {230,155,230,255}, ["clrvis"] = {0,175,255,255}, ["matvis"] = nil, ["matinv"] = nil,},},
+            };
         end;
         p_list.ref.name[i] = j:GetName();
         p_list.ref.uid[i] = uid;
@@ -251,7 +423,7 @@ callbacks.Register("CreateMove", "Apply", function()
 
     elseif ui_misc[1]:GetValue() == 1 then
         -- per players ragebot
-        if prio_vis[2] ~= nil then
+        if prio_vis[2] ~= nil and prio_vis.allowed == true and wep ~= nil then
             gui.SetValue("rbot.master", true);
         else
             gui.SetValue("lbot.master", true);
