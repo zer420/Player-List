@@ -15,7 +15,7 @@ local function Updater()
         reload:Close(); info.updt_available = true;
 end; end; Updater();
 
-local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", false);
+local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", true);
 local ui_win = gui.Window("playerlist", "Player List", 150, 150, 766, 422);
 
 local ui_tab = {
