@@ -1,4 +1,4 @@
-local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", false);
+local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", true);
 local ui_win = gui.Window("playerlist", "Player List", 150, 150, 766, 422);
 
 local ui_tab = {
@@ -245,6 +245,7 @@ local function ui_visual_previewer(x1, y1, x2, y2, active)
 end;
 local ui_visual_preview = gui.Custom(ui_tab[1][5], "visualpreview", 56, 0, 90, 187, ui_visual_previewer); -- I may add more features in the future
 
+local espfont = draw.CreateFont("Bahnschrift", 12);
 callbacks.Register("DrawESP", function(b)
     if ui_misc[4]:GetValue() == false then return; end;
     local p_ent = b:GetEntity();
@@ -258,8 +259,8 @@ callbacks.Register("DrawESP", function(b)
         draw.FilledRect(x1, y1, x1 + 1, y2);
         draw.FilledRect(x2, y1, x2 - 1, y2);
     end;
-    if ui_tab[ntab + 1].f2 ~= nil then
-        draw.SetFont(ui_tab[ntab + 1].f2);
+    if espfont ~= nil then
+        draw.SetFont(espfont);
     end;
     if p_list.p[uid].vis["name"][1] == true then
         draw.Color(unpack(unpack({p_list.p[uid].vis["name"].clr})));
