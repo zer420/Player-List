@@ -1,11 +1,28 @@
-local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", true);
+local info = {
+    v_loc = 1.02,
+    v_onl = http.Get("https://raw.githubusercontent.com/zer420/Player-List/master/version"),
+    src = "https://raw.githubusercontent.com/zer420/Player-List/master/core.lua",
+    dir = "zerlib\\",
+    name = GetScriptName(),
+    updt_available = false,
+};
+UnloadScript(info.dir .. "reload.lua")
+
+local function Updater()
+    if info.v_loc < tonumber(info.v_onl) then
+        local reload = file.Open(info.dir .. "reload.lua", "w");
+        reload:Write([[local f = 0;callbacks.Register("Draw",function()if f == 0 then UnloadScript("]]..info.name..[[");end;if f == 1 then LoadScript("]]..info.name..[[");end;f=f+1;end);]]);
+        reload:Close(); info.updt_available = true;
+end; end; Updater();
+
+local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", false);
 local ui_win = gui.Window("playerlist", "Player List", 150, 150, 766, 422);
 
 local ui_tab = {
     {"Player", gui.Groupbox(ui_win, "Player Selection", 16, 56, 234), gui.Groupbox(ui_win, "Options", 266, 56, 234),
     gui.Groupbox(ui_win, "Informations", 266, 224, 234), gui.Groupbox(ui_win, "Visuals", 516, 56, 234),},
     {"Misc", gui.Groupbox(ui_win, "Playstyle", 16, 56, 234), gui.Groupbox(ui_win, "Priority Settings", 266, 56, 234),
-    gui.Groupbox(ui_win, "Visuals Settings", 16, 190, 234),},
+    gui.Groupbox(ui_win, "Visuals Settings", 16, 190, 234), gui.Groupbox(ui_win, "Updater", 266, 236, 234),},
     {1, {170,30,30,255}, {220,60,40,255}, {255,255,255,255}, {255,255,255,40}, f, f2, dpi, dpi_scale = {0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3,},},
 };
 local ntab = (#ui_tab - 1); local function ui_setup() for i = 1, ntab do if i ~= ui_tab[ntab + 1][1] then for j = 2, #ui_tab[i] do ui_tab[i][j]:SetInvisible(true); end; end; end; end;
@@ -24,6 +41,7 @@ ui_setup(); local function ui_tab_selector(x1, y1, x2, y2, active)
                 for j = 2, #ui_tab[i] do ui_tab[i][j]:SetInvisible(false); end;
 end; end; offset = offset + size; end; end;
 local ui_tab_select = gui.Custom(ui_win, "tab", 0, 0, 766, 40, ui_tab_selector); -- way cleaner than buttons
+
 ui_tab_select:SetWidth(516);
 local ui_plist = gui.Listbox(ui_tab[1][2], "players", 257);
 ui_plist:SetWidth(202);
@@ -37,10 +55,10 @@ local ui_misc = {
 
 local ui_visuals_ref = gui.Multibox(ui_tab[1][5], "Options");
 local ui_visuals = {
-    gui.Checkbox(ui_visuals_ref, "visuals.box", "Box", true),
-    gui.Checkbox(ui_visuals_ref, "visuals.name", "Name", true),
-    gui.Checkbox(ui_visuals_ref, "visuals.health", "Health", true),
-    gui.Checkbox(ui_visuals_ref, "visuals.chams", "Chams", true),
+    gui.Checkbox(ui_visuals_ref, "visuals.box", "Box", false),
+    gui.Checkbox(ui_visuals_ref, "visuals.name", "Name", false),
+    gui.Checkbox(ui_visuals_ref, "visuals.health", "Health", false),
+    gui.Checkbox(ui_visuals_ref, "visuals.chams", "Chams", false),
 };
 local ui_visuals_color = {
     gui.ColorPicker(ui_visuals[1], "clr", "Box", 255, 255, 255, 80),
@@ -166,7 +184,7 @@ callbacks.Register("Draw", "UIHandler", function()
 
     if ui_cache.opti == false then return; end;
 
-    ui_win:SetHeight(ui_tab[3][1] == 1 and 422 or 336);
+    ui_win:SetHeight(ui_tab[3][1] == 1 and 422 or 376);
 
     ui_cache.opti = ui_tab[3][1] == 1 and ui_misc[4]:GetValue() == true;
 
@@ -202,6 +220,14 @@ callbacks.Register("Draw", "UIHandler", function()
         kdr:SetText(temp_kdr.d > 0 and "Kill/Death Ratio = " .. (math.ceil((temp_kdr.k / temp_kdr.d) * 10) * 0.1) or "Kill/Death Ratio = " ..  temp_kdr.k);
     end;
 end);
+
+
+local update = gui.Button(ui_tab[2][5], info.updt_available == true and "Update to version " .. info.v_onl or "No Update Available", function()
+    local file = file.Open(info.name, "w"); file:Write(http.Get(info.src)); file:Close(); LoadScript(info.dir .. "reload.lua");
+end);
+update:SetWidth(202);
+update:SetDisabled(not info.updt_available);
+
 
 local t_model = draw.CreateTexture(common.DecodePNG(http.Get("https://raw.githubusercontent.com/zer420/Player-List/master/t_model.png")));
 local ct_model = draw.CreateTexture(common.DecodePNG(http.Get("https://raw.githubusercontent.com/zer420/Player-List/master/ct_model.png")));
@@ -294,7 +320,6 @@ callbacks.Register("DrawModel", function(b)
         end;
     end;    
 end);
-
 
 local openprofile = gui.Button(ui_tab[1][4], "Open Steam Profile In Overlay", function()
     if ui_allow_updt == true then
@@ -424,7 +449,7 @@ callbacks.Register("CreateMove", "Apply", function()
 
     elseif ui_misc[1]:GetValue() == 1 then
         -- per players ragebot
-        if prio_vis[2] ~= nil and prio_vis.allowed == true and wep ~= nil then
+        if prio_vis[2] ~= nil and entities.GetByUserID(prio_vis[2]):IsAlive() and prio_vis.allowed == true and wep ~= nil then
             gui.SetValue("rbot.master", true);
         else
             gui.SetValue("lbot.master", true);
