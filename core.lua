@@ -1,5 +1,5 @@
 local info = {
-    v_loc = 1.02,
+    v_loc = 1.03,
     v_onl = http.Get("https://raw.githubusercontent.com/zer420/Player-List/master/version"),
     src = "https://raw.githubusercontent.com/zer420/Player-List/master/core.lua",
     dir = "zerlib\\",
@@ -16,7 +16,7 @@ local function Updater()
 end; end; Updater();
 
 local ui_enable = gui.Checkbox(gui.Reference("Misc", "General", "Extra"), "playerlist.enable", "Player List", true);
-local ui_win = gui.Window("playerlist", "Player List", 150, 150, 766, 422);
+local ui_win = gui.Window("playerlist", "Player List", 150, 150, 766, 536);
 
 local ui_tab = {
     {"Player", gui.Groupbox(ui_win, "Player Selection", 16, 56, 234), gui.Groupbox(ui_win, "Options", 266, 56, 234),
@@ -43,7 +43,7 @@ end; end; offset = offset + size; end; end;
 local ui_tab_select = gui.Custom(ui_win, "tab", 0, 0, 766, 40, ui_tab_selector); -- way cleaner than buttons
 
 ui_tab_select:SetWidth(516);
-local ui_plist = gui.Listbox(ui_tab[1][2], "players", 257);
+local ui_plist = gui.Listbox(ui_tab[1][2], "players", 370);
 ui_plist:SetWidth(202);
 
 local ui_misc = {
@@ -58,14 +58,17 @@ local ui_visuals = {
     gui.Checkbox(ui_visuals_ref, "visuals.box", "Box", false),
     gui.Checkbox(ui_visuals_ref, "visuals.name", "Name", false),
     gui.Checkbox(ui_visuals_ref, "visuals.health", "Health", false),
-    gui.Checkbox(ui_visuals_ref, "visuals.chams", "Chams", false),
+    gui.Combobox(ui_tab[1][5], "visuals.chamsvis", "Visible Chams", "Off", "Flat", "Color", "Metallic", "Pearlescent", "Bubble"),
+    gui.Combobox(ui_tab[1][5], "visuals.chamsinv", "Invisible Chams", "Off", "Flat", "Color", "Metallic", "Pearlescent", "Bubble"),
+    gui.Checkbox(ui_visuals_ref, "visuals.radar", "Reveal on Radar", false),
 };
+
 local ui_visuals_color = {
     gui.ColorPicker(ui_visuals[1], "clr", "Box", 255, 255, 255, 80),
     gui.ColorPicker(ui_visuals[2], "clr", "Name", 255, 255, 255, 255),
     gui.ColorPicker(ui_visuals[3], "clr", "Health", 255, 255, 255, 255),
     gui.ColorPicker(ui_visuals[4], "clrvis", "Chams", 0, 175, 255, 255),
-    gui.ColorPicker(ui_visuals[4], "clrinv", "Chams", 230, 155, 230, 255),
+    gui.ColorPicker(ui_visuals[5], "clrinv", "Chams", 230, 155, 230, 255),
 };
 ui_visuals_ref:SetPosY(203);
 
@@ -76,8 +79,6 @@ local ui_player_option = {
     gui.Checkbox(ui_option_multi_ref, "bodyaim", "Force Bodyaim", false),
     gui.Checkbox(ui_option_multi_ref, "safepoint", "Force Safepoint", false),
 };
-
-local kdr = gui.Text(ui_tab[1][4], "Kill/Death Ratio");
 
 ui_enable:SetDescription("Show the player list window.");
 ui_misc[1]:SetDescription("Select your playstyle for suiting features.");
@@ -100,18 +101,28 @@ local p_list = {
     },
 };
 
-local function CreateMat(uid, vis)
+local function CreateMat(uid, vis, type)
+    if type == 0 then return nil; end;
     local clr = vis == 0 and unpack({p_list.p[uid].vis["chams"]["clrvis"]}) or unpack({p_list.p[uid].vis["chams"]["clrinv"]});
-    local vmt = [[
-        "VertexLitGeneric" {
-        "$basetexture" "vgui/white_additive"
-        "$color" "[]] .. clr[1] / 255 .. " " .. clr[2] / 255 .. " " .. clr[3] / 255 .. [[]"
-        "$alpha" "]] .. clr[4] / 255 .. [["
-        "$ignorez" "]] .. vis .. [["
-    }]];
+    local type_b = type == 1 and "UnlitGeneric" or "VertexLitGeneric";
+    local addon = {
+        [1] = "",
+        [2] = "",
+        [3] = [["$envmap" "env_cubemap"]],
+        [4] = [["$phong" "1" "$basemapalphaphongmask" "1" "$pearlescent" "1"]],
+        [5] = [["$additive" "1"]],
+    };
+    local vmt = [["]] .. type_b .. [[" {
+            "$basetexture" "vgui/white_additive"
+            "$color" "[]] .. clr[1] / 255 .. " " .. clr[2] / 255 .. " " .. clr[3] / 255 .. [[]"
+            "$alpha" "]] .. clr[4] / 255 .. [["
+            "$ignorez" "]] .. vis .. [["
+            ]] .. addon[type] .. [[
+        }]];
     return materials.Create("Chams", vmt);
 end;
 
+local cache_chams = {};
 local function SaveCfg(uid)
     p_list.p[uid].rbot = semi_rbot:GetValue();
     p_list.p[uid].prio = priority_order:GetValue();
@@ -127,16 +138,28 @@ local function SaveCfg(uid)
     p_list.p[uid].vis["health"][1] = ui_visuals[3]:GetValue();
     p_list.p[uid].vis["health"].clr = {ui_visuals_color[3]:GetValue()};
 
-    p_list.p[uid].vis["chams"][1] = ui_visuals[4]:GetValue();
-    local temp = { {ui_visuals_color[4]:GetValue()}, {ui_visuals_color[5]:GetValue()}, ref = {{"clrvis", "matvis",}, {"clrinv", "matinv",},},};    
+    local temp = {{ui_visuals_color[4]:GetValue()}, {ui_visuals_color[5]:GetValue()}, ref = {{"clrvis", "matvis",}, {"clrinv", "matinv",},},};    
     for j = 1, 2 do
+        p_list.p[uid].vis["chams"][j] = ui_visuals[3 + j]:GetValue();
         for i = 1, 4 do
             if unpack({p_list.p[uid].vis["chams"][temp.ref[j][1]]})[i] ~= temp[j][i] then
                 p_list.p[uid].vis["chams"][temp.ref[j][1]] = temp[j];
-                p_list.p[uid].vis["chams"][temp.ref[j][2]] = CreateMat(uid, (j - 1));
+                p_list.p[uid].vis["chams"][temp.ref[j][2]] = CreateMat(uid, (j - 1), p_list.p[uid].vis["chams"][j]);
             end;
         end;
     end;
+    if cache_chams[uid] == nil then
+        cache_chams[uid] = {0,0,};
+    end;
+    for i = 1, 2 do
+        if cache_chams[uid][i] ~= ui_visuals[3 + i]:GetValue() then
+            p_list.p[uid].vis["chams"][temp.ref[i][2]] = CreateMat(uid, i - 1, p_list.p[uid].vis["chams"][i]);
+            cache_chams[uid][i] = ui_visuals[3 + i]:GetValue();
+        end;
+    end;
+
+    p_list.p[uid].vis["radar"][1] = ui_visuals[6]:GetValue();
+
 end;
 
 local function LoadCfg(uid)
@@ -155,14 +178,32 @@ local function LoadCfg(uid)
     ui_visuals_color[3]:SetValue(unpack(unpack({p_list.p[uid].vis["health"].clr})));
 
     ui_visuals[4]:SetValue(p_list.p[uid].vis["chams"][1]);
+    ui_visuals[5]:SetValue(p_list.p[uid].vis["chams"][2]);
     ui_visuals_color[4]:SetValue(unpack(unpack({p_list.p[uid].vis["chams"]["clrvis"]})));
     ui_visuals_color[5]:SetValue(unpack(unpack({p_list.p[uid].vis["chams"]["clrinv"]})));
+
+    ui_visuals[6]:SetValue(p_list.p[uid].vis["radar"][1]);
+
 end;
 
 local ui_allow_updt = false;
 
+local silentbool, ogname = false, "";
+local silentname = gui.Button(ui_tab[1][4], "Silent Name", function()
+    if ui_allow_updt == false then return; end;
+    if silentbool == false then
+        ogname = "­" .. client.GetConVar("name");
+        client.SetConVar("name", "\n\xAD\xAD\xAD\xAD");
+    else
+        client.SetConVar("name", ogname);
+    end;
+end);
+silentname:SetWidth(93);
+
+local kdr = gui.Text(ui_tab[1][4], "Kill/Death Ratio");
+
 local function Reset()
-    ui_allow_updt = false;    
+    ui_allow_updt = false;
     ui_plist:SetOptions();
     kdr:SetText("Kill/Death Ratio");
     p_list.p = {};
@@ -184,7 +225,7 @@ callbacks.Register("Draw", "UIHandler", function()
 
     if ui_cache.opti == false then return; end;
 
-    ui_win:SetHeight(ui_tab[3][1] == 1 and 422 or 376);
+    ui_win:SetHeight(ui_tab[3][1] == 1 and 536 or 376);
 
     ui_cache.opti = ui_tab[3][1] == 1 and ui_misc[4]:GetValue() == true;
 
@@ -218,16 +259,25 @@ callbacks.Register("Draw", "UIHandler", function()
             d = tonumber(entities.GetPlayerResources():GetPropInt("m_iDeaths", entities.GetByUserID(p_list.ref.uid[ui_cache.list]):GetIndex())),
         };
         kdr:SetText(temp_kdr.d > 0 and "Kill/Death Ratio = " .. (math.ceil((temp_kdr.k / temp_kdr.d) * 10) * 0.1) or "Kill/Death Ratio = " ..  temp_kdr.k);
+
+        local name = client.GetConVar("name");
+        silentbool = (name == "\n\xAD\xAD\xAD\xAD" or name:sub(1, 2) == "­");
+        silentname:SetName(silentbool == false and "Silent Name" or "Reset Name");
     end;
 end);
 
 
-local update = gui.Button(ui_tab[2][5], info.updt_available == true and "Update to version " .. info.v_onl or "No Update Available", function()
+local update = gui.Button(ui_tab[2][5], info.updt_available == true and "   Update to v." .. info.v_onl or "No Update", function()
     local file = file.Open(info.name, "w"); file:Write(http.Get(info.src)); file:Close(); LoadScript(info.dir .. "reload.lua");
 end);
-update:SetWidth(202);
+update:SetWidth(93);
 update:SetDisabled(not info.updt_available);
-
+local changelog = gui.Button(ui_tab[2][5], "Changelog", function()
+	panorama.RunScript([[SteamOverlayAPI.OpenExternalBrowserURL("https://github.com/zer420/Player-List/blob/master/changelog.md")]]);
+end)
+changelog:SetWidth(93);
+changelog:SetPosX(109);
+changelog:SetPosY(0);
 
 local t_model = draw.CreateTexture(common.DecodePNG(http.Get("https://raw.githubusercontent.com/zer420/Player-List/master/t_model.png")));
 local ct_model = draw.CreateTexture(common.DecodePNG(http.Get("https://raw.githubusercontent.com/zer420/Player-List/master/ct_model.png")));
@@ -255,7 +305,7 @@ local function ui_visual_previewer(x1, y1, x2, y2, active)
         local xtxt, ytxt = draw.GetTextSize(string); 
         draw.Text(x1 - xtxt - 2 , y1, string);
     end;
-    if ui_visuals[4]:GetValue() then -- textured chams
+    if ui_visuals[4]:GetValue() ~= 0 then -- textured chams
         draw.Color(ui_visuals_color[4]:GetValue());
     else
         draw.Color(255,255,255,255);
@@ -277,6 +327,8 @@ callbacks.Register("DrawESP", function(b)
     local p_ent = b:GetEntity();
     if p_ent == nil or p_ent:IsPlayer() ~= true then return; end;
     local uid = client.GetPlayerInfo(p_ent:GetIndex())["UserID"];
+    if p_list.p[uid] == nil then return; end;
+
     local x1, y1, x2, y2 = b:GetRect();
     if p_list.p[uid].vis["box"][1] == true then
         draw.Color(unpack(unpack({p_list.p[uid].vis["box"].clr})));
@@ -307,18 +359,20 @@ callbacks.Register("DrawModel", function(b)
     local p_ent = b:GetEntity();
     if p_ent == nil or p_ent:IsPlayer() ~= true then return; end;
     local uid = client.GetPlayerInfo(p_ent:GetIndex())["UserID"];
-
-    if p_list.p[uid].vis["chams"][1] == true then
-        local ref = {"matinv", "matvis",};
-        for i = 1, 2 do
+    if p_list.p[uid] == nil then return; end;
+    local ref = {"matinv", "matvis",};
+    for i = 1, 2 do
+        local matref = i == 1 and 2 or 1;
+        if p_list.p[uid].vis["chams"][matref] ~= 0 then
             if p_list.p[uid].vis["chams"][ref[i]] ~= nil then
                 b:ForcedMaterialOverride(p_list.p[uid].vis["chams"][ref[i]]);
                 b:DrawExtraPass();
             else
-                p_list.p[uid].vis["chams"][ref[i]] = CreateMat(uid, i == 1 and 1 or 0);
+                p_list.p[uid].vis["chams"][ref[i]] = CreateMat(uid, i == 1 and 1 or 0, p_list.p[uid].vis["chams"][i]);
             end;
         end;
-    end;    
+    end;
+     
 end);
 
 local openprofile = gui.Button(ui_tab[1][4], "Open Steam Profile In Overlay", function()
@@ -330,6 +384,14 @@ local openprofile = gui.Button(ui_tab[1][4], "Open Steam Profile In Overlay", fu
 end; end; end);
 openprofile:SetWidth(202);
 
+local stealname = gui.Button(ui_tab[1][4], "Steal Name", function()
+    if ui_allow_updt == false then return; end;
+    client.SetConVar("name", "­" .. p_list.ref.name[ui_plist:GetValue() + 1]); -- ALT + 0173
+end);
+stealname:SetWidth(93);
+stealname:SetPosX(109);
+stealname:SetPosY(0);
+
 callbacks.Register("CreateMove", "UpdatePlayerList", function()
     p_list.temp = {};
     p_list.ref = {name = {},uid = {},index = {},};
@@ -339,8 +401,9 @@ callbacks.Register("CreateMove", "UpdatePlayerList", function()
         -- create an entry in the table
         if p_list.p[uid] == nil then
             p_list.p[uid] = {rbot = false, prio = 10, bodyaim = false, safepoint = false, 
-                vis = {["box"] = {false, clr = {255,255,255,80},}, ["name"] = {false, clr = {255,255,255,255},},
-                ["health"] = {false, clr = {255,255,255,255}}, ["chams"] = {false, ["clrinv"] = {230,155,230,255}, ["clrvis"] = {0,175,255,255}, ["matvis"] = nil, ["matinv"] = nil,},},
+                vis = {["box"] = {false, clr = {255,255,255,80},}, ["name"] = {false, clr = {255,255,255,255},},["health"] = {false, clr = {255,255,255,255}},
+                ["chams"] = {0, 0, ["clrinv"] = {230,155,230,255}, ["clrvis"] = {0,175,255,255}, ["matvis"] = nil, ["matinv"] = nil,},
+                ["radar"] = {false},},
             };
         end;
         p_list.ref.name[i] = j:GetName();
@@ -349,6 +412,16 @@ callbacks.Register("CreateMove", "UpdatePlayerList", function()
     end;
     ui_plist:SetOptions(unpack(p_list.ref.name));
     ui_allow_updt = true;
+end);
+
+callbacks.Register("Draw", "EngineRadar", function()
+    for i, p in pairs(entities.FindByClass("CCSPlayer")) do
+        local uid = client.GetPlayerInfo(p:GetIndex())["UserID"];
+        if p_list.p[uid] == nil then return; end;
+        if p_list.p[uid].vis["radar"][1] == true then
+            p:SetProp("m_bSpotted", 1);
+        end;
+	end
 end);
 
 local weapon_info = {
