@@ -1,5 +1,12 @@
 # Player List Changelog
 
+### version 1.03
+* Added changelog shortcut
+* Added chams type selection for visible & invisible with flat, color, metalic, pearlescent & bubble.
+* Added name stealer
+* Added silent name changer
+* Added reveal on engine radar
+
 ### version 1.02
 * Added updater with auto-reload
 * Minor bug fixes
